@@ -12,7 +12,7 @@ while getopts "aco:j:" o; do
     o) DEST=$OPTARG ;;
     j) JOBS=$OPTARG ;;
     a) CLIENT=ASCP  ;;
-    c) CLIENT=CURL  ll
+    c) CLIENT=CURL  ;;
   esac
 done
 shift $((OPTIND-1))
