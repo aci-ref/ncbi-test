@@ -20,14 +20,14 @@ inputs=( $* )
 
 function fetch_ascp {
   date
-  du -k TEST.1
+  du -k $2
 
   PARASCP_CORES=$JOBS ${execdir}/ascppar.sh -i ~/.aspera/connect/etc/asperaweb_id_dsa.openssh \
 	-G 8M -T -Ql ${JOBS}g -Z 8232 -- -L/tmp --mode recv --host 130.14.250.13 --user anonftp \
 	--file-list $1 $2
 
   date
-  du -k TEST.1
+  du -k $2
 }
 
 function fetch_curl {
