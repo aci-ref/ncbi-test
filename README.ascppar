@@ -1,0 +1,44 @@
+#
+# README ascppar.sh
+#
+
+Example download using --file-list using the file:// spec
+---------------------------------------------------------
+
+PARASCP_CORES=5 PARASCP_PASS=aspera PARASCP_REMOTES=192.168.35.15 /opt/aspera/bin/ascppar.sh -L/tmp/L -R /tmp/L -T -Ql2g -Z 8232 -k1 --   :/mnt/raid/CLEMSON-500GB file:////mnt/raid/SS-SCRATCH/
+
+    Notes:
+       -Z 8232  - jumbo frames, specially calculated to provide a MB-aligned write size
+       -k1      - skip files that are already present (when resuming)
+       -T       - disable inline encryption
+       -Ql2g    - adaptive rate self limitted at 2 Gbps
+
+Example download using --file-list (default, using "ring" system for writing) 
+-----------------------------------------------------------------------------
+
+PARASCP_CORES=6 PARASCP_PASS=aspera /opt/aspera/bin/ascppar.sh -T -Ql100m -Z 9000 -- -L/tmp --mode recv --host 10.0.109.1 --user asp1 --file-list /data/asp1/mylist2  /data/asp1/R2
+
+    Where /data/asp1/mylist2 contains:
+        O2/file-onebyte-3549
+        O2/file-onebyte-1677
+        O2/file-onebyte-10009
+        O2/file-onebyte-11226
+        O2/file-onebyte-19222
+        O2/file-onebyte-4334
+        O2/file-onebyte-1454
+        O2/file-onebyte-9529
+        O2/file-onebyte-18432
+        O2/file-onebyte-10242
+
+Example download using --file-list and private keys
+---------------------------------------------------
+
+PARASCP_CORES=4 /opt/aspera/bin/ascppar.sh -i /home/luke/.ssh/id_rsa -- --mode recv --host localhost --user luke --file-list /home/luke/mylist  /data/
+
+Where /home/luke/mylist contains:
+
+/data/file1
+/data/file2
+/data/file3
+
+
