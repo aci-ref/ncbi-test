@@ -69,7 +69,7 @@ def filesize(fn):
 def dlrate(bytes, duration):
   return '%sbps' % humansize(bytes * 8. / duration, 1000)
 
-def dirsize(self):
+def dirsize():
   return sum(map(lambda f: os.stat(os.path.join(outputDir, f))[stat.ST_SIZE], os.listdir(outputDir))) 
 
 jobs = Queue.Queue()
@@ -82,7 +82,7 @@ filesTotal = jobs.qsize()
 class ShowRate(threading.Thread):
   def __init__(self):
     threading.Thread.__init__(self)
-    self.startSize = self.dirsize()
+    self.startSize = dirsize()
     self.startTime = time.time()
 
 
@@ -93,7 +93,7 @@ class ShowRate(threading.Thread):
       bytes = dsize - self.startSize
       dur   = time.time() - self.startTime
       rate  = humansize(bytes * 8. / dur, 1000)
-      print '~ %d (%9sB) in %9s ; %9sbps' % (bytes, humansize(bytes, 1024)
+      print '> %12d (%9sB) in %9s ; %9sbps' % (bytes, humansize(bytes, 1024)
                                        , humantime(time.time() - processStartTime)
                                        , rate)
       if filesDown == filesTotal:
@@ -108,13 +108,24 @@ ASCP_CMD = "ascp -TQ -l%(rate)s -G %(writesz)s -Z %(mtu)s " \
            + "--mode recv --user anonftp --host %(host)s -L . -q " \
            + "%(file)s %(dest)s"
 
-CURL_CMD = "curl -s ftp://%(host)s%(file)s -o %(dest)s/%(base)s"
+CURL_EXEC = os.environ.get('CURL_EXEC', 'curl')
+CURL_CMD = CURL_EXEC + " -s ftp://%(host)s%(file)s -o %(dest)s/%(base)s"
 
 ARIA_CMD = "aria2c --quiet --dir=%(dest)s --file-allocation=none ftp://%(host)s%(file)s"
 
+# HOSTS = [ 'ftp-trace.ncbi.nlm.nih.gov' ]
+
+HOSTS = [ '130.14.250.7'
+        , '130.14.250.10'
+        , '130.14.250.11'
+        , '130.14.250.12'
+        , '130.14.250.13'
+        ]
+
 class Runner(threading.Thread):
-  def __init__(self):
+  def __init__(self, index):
     threading.Thread.__init__(self)
+    self.index = index
 
   def run(self):
     global filesDown
@@ -125,15 +136,14 @@ class Runner(threading.Thread):
              { 'rate' :   '10g'
              , 'writesz': '8M'
              , 'mtu' :    '9000'
-             , 'host':    '130.14.250.13'
-             # , 'host':    'ftp-trace.ncbi.nlm.nih.gov'
+             , 'host':    HOSTS[self.index % len(HOSTS)]
              , 'file':    path
              , 'base':    os.path.basename(path)
              , 'dest':    outputDir
              }
       starttime = time.time()
       if not os.path.exists(os.path.join(outputDir, fn)):
-         print cmd
+         print "# %s" % cmd
          os.system(cmd)
       filesDown += 1
       if os.path.exists(os.path.join(outputDir, fn)):
@@ -150,19 +160,19 @@ class Runner(threading.Thread):
 if showProgress:
    ShowRate().start()
 
-initSize  = dirsize(outputDir)
+initSize  = dirsize()
 startTime = time.time()
 
 threads = [ ]
 first = True
 for i in range(numThreads):
-   threads.append(Runner())
+   threads.append(Runner(i))
    threads[-1].start()
 
 for t in threads:
    t.join()
 
-finalSize = dirsize(outputDir)
+finalSize = dirsize()
 stopTime  = time.time()
 print "Downloaded %sB from %s in %s.  Average rate: %s" % \
    ( humansize(finalSize - initSize, 1024)
